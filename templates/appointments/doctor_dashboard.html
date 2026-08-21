@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Doctor Dashboard{% endblock %}
+{% block content %}
+<h2 class="mb-4">Today's Appointments — {{ doctor.specialisation }}</h2>
+
+{% if today_appts %}
+  <div class="row g-3 mb-5">
+    {% for appt in today_appts %}
+      <div class="col-md-6">
+        <div class="card shadow-sm {% if appt.ai_urgency_level == 'High' %}border-danger{% endif %}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <h6 class="card-title mb-1">{{ appt.patient.get_full_name }}</h6>
+              {% if appt.ai_urgency_level %}
+                <span class="badge urgency-{{ appt.ai_urgency_level }}">{{ appt.ai_urgency_level }}</span>
+              {% endif %}
+            </div>
+            <p class="mb-1 small text-muted">{{ appt.start_time|time:"g:i A" }}</p>
+            {% if appt.ai_pre_visit_failed %}
+              <p class="small text-warning mb-1">⚠ AI summary unavailable — review symptoms manually below.</p>
+            {% elif appt.ai_chief_complaint %}
+              <p class="mb-1"><strong>Chief complaint:</strong> {{ appt.ai_chief_complaint }}</p>
+            {% endif %}
+            <p class="small text-muted mb-2">{{ appt.symptoms|truncatewords:15 }}</p>
+            <a href="{% url 'appointment_detail' appt.id %}" class="btn btn-sm btn-primary">Open visit</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-muted">No appointments today.</p>
+{% endif %}
+
+<h5>Upcoming</h5>
+{% if upcoming_appts %}
+  <table class="table">
+    <thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Urgency</th><th></th></tr></thead>
+    <tbody>
+      {% for appt in upcoming_appts %}
+        <tr>
+          <td>{{ appt.patient.get_full_name }}</td>
+          <td>{{ appt.date }}</td>
+          <td>{{ appt.start_time|time:"g:i A" }}</td>
+          <td>{% if appt.ai_urgency_level %}<span class="badge urgency-{{ appt.ai_urgency_level }}">{{ appt.ai_urgency_level }}</span>{% endif %}</td>
+          <td><a href="{% url 'appointment_detail' appt.id %}" class="btn btn-sm btn-link">View</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="text-muted">No upcoming appointments beyond today.</p>
+{% endif %}
+{% endblock %}

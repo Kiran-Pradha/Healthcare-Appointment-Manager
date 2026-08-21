@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Find a Doctor{% endblock %}
+{% block content %}
+<h2 class="mb-4">Find a Doctor</h2>
+
+<form method="get" class="row g-2 mb-4">
+  <div class="col-md-6">
+    <select name="specialisation" class="form-select" onchange="this.form.submit()">
+      <option value="">All specialisations</option>
+      {% for s in specialisations %}
+        <option value="{{ s }}" {% if s == query %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</form>
+
+<div class="row g-3">
+  {% for doctor in doctors %}
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm card-hover">
+        <div class="card-body">
+          <h5 class="card-title">Dr. {{ doctor.user.get_full_name }}</h5>
+          <p class="text-primary mb-1">{{ doctor.specialisation }}</p>
+          <p class="text-muted small">{{ doctor.working_hours_start|time:"g:i A" }} – {{ doctor.working_hours_end|time:"g:i A" }} · {{ doctor.slot_duration_minutes }} min slots</p>
+          {% if doctor.bio %}<p class="small">{{ doctor.bio|truncatewords:20 }}</p>{% endif %}
+          <a href="{% url 'doctor_detail' doctor.id %}" class="btn btn-primary btn-sm">View slots & book</a>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-muted">No doctors found for that specialisation.</p>
+  {% endfor %}
+</div>
+{% endblock %}

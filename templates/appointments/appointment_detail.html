@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Appointment Details{% endblock %}
+{% block content %}
+<h2>Appointment with
+  {% if is_doctor_owner %}{{ appointment.patient.get_full_name }}{% else %}Dr. {{ appointment.doctor.user.get_full_name }}{% endif %}
+</h2>
+<p class="text-muted">{{ appointment.date|date:"l, F j, Y" }} at {{ appointment.start_time|time:"g:i A" }} · <span class="badge bg-secondary">{{ appointment.get_status_display }}</span></p>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5>Pre-visit summary</h5>
+        {% if appointment.ai_pre_visit_failed %}
+          <p class="text-warning small">⚠ AI summary could not be generated. Raw symptoms shown below.</p>
+        {% elif appointment.ai_urgency_level %}
+          <span class="badge urgency-{{ appointment.ai_urgency_level }} mb-2">Urgency: {{ appointment.ai_urgency_level }}</span>
+          <p><strong>Chief complaint:</strong> {{ appointment.ai_chief_complaint }}</p>
+          {% if appointment.ai_suggested_questions %}
+            <p><strong>Suggested questions:</strong></p>
+            <ul>
+              {% for q in appointment.ai_suggested_questions %}<li>{{ q }}</li>{% endfor %}
+            </ul>
+          {% endif %}
+        {% endif %}
+        <p><strong>Reported symptoms:</strong><br>{{ appointment.symptoms|linebreaks }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5>Post-visit</h5>
+        {% if appointment.status == 'completed' %}
+          {% if appointment.ai_post_visit_failed %}
+            <p class="text-warning small">⚠ AI summary unavailable — see clinical notes.</p>
+          {% endif %}
+          {% if appointment.ai_post_visit_summary %}
+            <p>{{ appointment.ai_post_visit_summary|linebreaks }}</p>
+          {% endif %}
+          {% if is_doctor_owner %}
+            <hr>
+            <p class="small text-muted"><strong>Clinical notes:</strong> {{ appointment.clinical_notes }}</p>
+            <p class="small text-muted"><strong>Prescription:</strong> {{ appointment.prescription|linebreaks }}</p>
+          {% endif %}
+        {% elif is_doctor_owner %}
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">Clinical notes</label>
+              <textarea name="clinical_notes" class="form-control" rows="4" required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Prescription</label>
+              <textarea name="prescription" class="form-control" rows="3"
+                        placeholder="One line per medicine, e.g. Amoxicillin 500mg — 3x/day — 5 days"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Complete visit & generate summary</button>
+          </form>
+        {% else %}
+          <p class="text-muted">Not completed yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Dr. {{ doctor.user.get_full_name }}{% endblock %}
+{% block content %}
+<h2>Dr. {{ doctor.user.get_full_name }}</h2>
+<p class="text-primary">{{ doctor.specialisation }}</p>
+{% if doctor.bio %}<p class="text-muted">{{ doctor.bio }}</p>{% endif %}
+
+<h5 class="mt-4">Pick a date</h5>
+<div class="d-flex gap-2 flex-wrap mb-3">
+  {% for d in upcoming_dates %}
+    <a href="?date={{ d|date:'Y-m-d' }}"
+       class="btn btn-sm {% if d == selected_date %}btn-primary{% else %}btn-outline-primary{% endif %}">
+      {{ d|date:"D, M j" }}
+    </a>
+  {% endfor %}
+</div>
+
+<h5>Available slots — {{ selected_date|date:"l, F j, Y" }}</h5>
+{% if slots %}
+  <div class="d-flex flex-wrap gap-2 mb-4" id="slot-grid">
+    {% for slot in slots %}
+      <button type="button" class="btn btn-outline-success slot-btn"
+              onclick="holdSlot('{{ selected_date|date:'Y-m-d' }}', '{{ slot|time:'H:i:s' }}', this)">
+        {{ slot|time:"g:i A" }}
+      </button>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-muted">No slots available on this date — the doctor may be on leave or fully booked. Try another date.</p>
+{% endif %}
+
+<div id="hold-error" class="alert alert-danger d-none mt-3"></div>
+
+{% if not user.is_authenticated or user.role != 'patient' %}
+  <div class="alert alert-info">Only logged-in patients can book. <a href="{% url 'login' %}">Login</a> to continue.</div>
+{% endif %}
+
+<script>
+function holdSlot(dateStr, timeStr, btn) {
+    const errorBox = document.getElementById('hold-error');
+    errorBox.classList.add('d-none');
+    btn.disabled = true;
+    btn.textContent = 'Holding...';
+
+    const formData = new FormData();
+    formData.append('date', dateStr);
+    formData.append('time', timeStr);
+
+    fetch("{% url 'hold_slot' doctor.id %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData,
+    })
+    .then(res => res.json().then(data => ({ status: res.status, data })))
+    .then(({ status, data }) => {
+        if (status === 200) {
+            window.location.href = data.redirect_url;
+        } else {
+            errorBox.textContent = data.error || 'Could not hold this slot.';
+            errorBox.classList.remove('d-none');
+            btn.disabled = false;
+            btn.textContent = timeStr;
+            setTimeout(() => window.location.reload(), 1500);
+        }
+    })
+    .catch(() => {
+        errorBox.textContent = 'Network error — please try again.';
+        errorBox.classList.remove('d-none');
+        btn.disabled = false;
+    });
+}
+</script>
+{% endblock %}

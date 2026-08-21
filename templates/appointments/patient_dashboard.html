@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}My Appointments{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>My Appointments</h2>
+  <a href="{% url 'doctor_search' %}" class="btn btn-primary">+ Book new appointment</a>
+</div>
+
+{% if leave_conflicts %}
+  <div class="alert alert-warning">
+    <strong>⚠ Action needed:</strong> one or more of your appointments were cancelled because the doctor became unavailable.
+    <ul class="mb-0 mt-2">
+      {% for appt in leave_conflicts %}
+        <li>Dr. {{ appt.doctor.user.get_full_name }} on {{ appt.date }} —
+          <a href="{% url 'doctor_detail' appt.doctor.id %}">rebook now</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<h5>Upcoming</h5>
+{% if upcoming %}
+  <div class="row g-3 mb-4">
+    {% for appt in upcoming %}
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h6 class="card-title">Dr. {{ appt.doctor.user.get_full_name }} — {{ appt.doctor.specialisation }}</h6>
+            <p class="mb-1">{{ appt.date|date:"D, M j, Y" }} at {{ appt.start_time|time:"g:i A" }}</p>
+            {% if appt.ai_urgency_level %}
+              <span class="badge urgency-{{ appt.ai_urgency_level }}">Urgency: {{ appt.ai_urgency_level }}</span>
+            {% endif %}
+            <div class="mt-2">
+              <a href="{% url 'appointment_detail' appt.id %}" class="btn btn-sm btn-outline-primary">Details</a>
+              <form method="post" action="{% url 'cancel_appointment' appt.id %}" class="d-inline"
+                    onsubmit="return confirm('Cancel this appointment?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-muted">No upcoming appointments.</p>
+{% endif %}
+
+<h5>Past</h5>
+{% if past %}
+  <table class="table">
+    <thead><tr><th>Doctor</th><th>Date</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for appt in past %}
+        <tr>
+          <td>Dr. {{ appt.doctor.user.get_full_name }}</td>
+          <td>{{ appt.date }}</td>
+          <td><span class="badge bg-secondary">{{ appt.get_status_display }}</span></td>
+          <td><a href="{% url 'appointment_detail' appt.id %}" class="btn btn-sm btn-link">View summary</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="text-muted">No past appointments yet.</p>
+{% endif %}
+{% endblock %}

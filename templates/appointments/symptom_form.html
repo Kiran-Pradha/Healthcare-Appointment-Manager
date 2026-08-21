@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Describe your symptoms{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="alert alert-warning d-flex justify-content-between">
+      <span>Your slot with Dr. {{ hold.doctor.user.get_full_name }} on {{ hold.date }} at {{ hold.start_time|time:"g:i A" }} is held for you.</span>
+      <strong>⏱ <span id="countdown">--:--</span></strong>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h4 class="mb-3">Tell us what's going on</h4>
+        <p class="text-muted small">This helps the doctor prepare before your visit. An AI assistant will summarize this for the doctor — it does not replace your consultation.</p>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <textarea name="symptoms" class="form-control" rows="6" placeholder="e.g. Fever since 2 days, mild headache, sore throat..." required>{{ request.POST.symptoms }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Confirm Appointment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const expiresAt = new Date("{{ hold.expires_at.isoformat }}").getTime();
+const countdownEl = document.getElementById('countdown');
+
+function tick() {
+    const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    countdownEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    if (remaining <= 0) {
+        clearInterval(interval);
+        alert('Your slot hold has expired. Please pick a slot again.');
+        window.location.href = "{% url 'doctor_search' %}";
+    }
+}
+const interval = setInterval(tick, 1000);
+tick();
+</script>
+{% endblock %}

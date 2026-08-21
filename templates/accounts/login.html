@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Choose Your Portal{% endblock %}
+{% block content %}
+<div class="login-shell">
+  <div class="login-panel">
+    <div class="login-header text-center mb-4">
+      <span class="login-kicker">Access portal</span>
+      <h2 class="login-title">Choose your role</h2>
+      <p class="login-subtitle">Select the portal that matches your access level and continue securely.</p>
+    </div>
+
+    <form method="post" class="login-form" novalidate>
+      {% csrf_token %}
+
+      <div class="role-grid" aria-label="Select role">
+        {% for value, label in form.role.field.choices %}
+          {% if value %}
+            <button type="button"
+                    class="role-card role-{{ value }} {% if selected_role == value or form.role.value == value %}selected{% endif %}"
+                    data-role="{{ value }}"
+                    data-role-label="{{ label }}">
+              <span class="role-icon">
+                {% if value == 'patient' %}🧑‍⚕️{% elif value == 'doctor' %}🩺{% else %}🛡️{% endif %}
+              </span>
+              <span class="role-name">{{ label }}</span>
+              <small>
+                {% if value == 'patient' %}Book appointments{% elif value == 'doctor' %}Manage schedule{% else %}Admin control{% endif %}
+              </small>
+            </button>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {{ form.role }}
+
+      {% if form.role.errors %}
+        <div class="field-error mt-2">{{ form.role.errors|join:', ' }}</div>
+      {% endif %}
+
+      <div class="credential-panel mt-4">
+        <div class="mb-3">
+          <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+          {{ form.username }}
+          {% if form.username.errors %}<div class="field-error mt-2">{{ form.username.errors|join:', ' }}</div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="field-error mt-2">{{ form.password.errors|join:', ' }}</div>{% endif %}
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger mt-3 mb-0">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary login-submit mt-4">Login to portal</button>
+    </form>
+
+    <div class="login-footer text-center mt-4">
+      <span>Need an account?</span>
+      <a href="{% url 'register' %}" class="ms-1">Register as patient</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const roleCards = document.querySelectorAll('.role-card');
+  const roleField = document.getElementById('{{ form.role.id_for_label }}');
+
+  roleCards.forEach((card) => {
+    card.addEventListener('click', () => {
+      roleCards.forEach((item) => item.classList.remove('selected'));
+      card.classList.add('selected');
+      roleField.value = card.dataset.role;
+    });
+  });
+
+  if (!roleField.value) {
+    const firstCard = document.querySelector('.role-card');
+    if (firstCard) {
+      firstCard.classList.add('selected');
+      roleField.value = firstCard.dataset.role;
+    }
+  }
+</script>
+{% endblock %}

@@ -2,7 +2,7 @@
 
 A clinic appointment platform with separate patient, doctor, and admin experiences: patients search doctors and book slots, submit symptoms and get an AI-generated pre-visit summary for the doctor, doctors submit post-visit notes that become a patient-friendly AI summary, and both sides stay informed via email and Google Calendar.
 
-**Hosted application URL:** Not yet provisioned. The repository includes a Render deployment manifest (`render.yaml`); after creating the Render service and setting its secrets, use the service URL shown by Render.
+**Hosted application URL:** https://healthcare-appointment-manager-nc9z.onrender.com
 
 Built with **Django + PostgreSQL** (SQLite for zero-setup local dev), server-rendered templates (no separate frontend build), and the **Anthropic API** for LLM summaries.
 

@@ -24,7 +24,26 @@ python manage.py seed_demo_data # creates demo accounts (see below)
 python manage.py runserver
 ```
 
-Visit `http://localhost:8000/`. Emails print to your terminal (console backend) and calendar sync is silently skipped — everything else works fully out of the box.
+Visit `http://localhost:8000/`. By default, emails print to your terminal (console backend) and calendar sync is silently skipped — everything else works fully out of the box.
+
+### Email configuration
+
+For real delivery through SendGrid SMTP, set these values in `.env` (or in the Render environment dashboard):
+
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.sendgrid.net
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=apikey
+EMAIL_HOST_PASSWORD=your-sendgrid-api-key
+DEFAULT_FROM_EMAIL=verified-sender@yourdomain.com
+EMAIL_TIMEOUT=10
+HOSPITAL_NAME=PulseCare Hospital
+EMAIL_FROM_NAME=PulseCare Hospital
+```
+
+Recipients see the sender as `PulseCare Hospital <verified-sender@yourdomain.com>`. The From address must be verified in SendGrid. Password-reset emails include a Spam/Junk reminder, and the website does too after a reset request.
 
 ### Demo accounts (created by `seed_demo_data`)
 
@@ -42,7 +61,7 @@ Visit `http://localhost:8000/`. Emails print to your terminal (console backend) 
 python manage.py test
 ```
 
-11 tests, including a **real two-thread concurrency test** that races two bookings for the same slot (`appointments/tests.py::test_concurrent_booking_only_one_wins`) and asserts the database never ends up with two scheduled appointments for it, and LLM-failure-handling tests that run with no API key configured to prove graceful degradation.
+13 tests, including a **real two-thread concurrency test** that races two bookings for the same slot (`appointments/tests.py::test_concurrent_booking_only_one_wins`) and asserts the database never ends up with two scheduled appointments for it, and LLM-failure-handling tests that run with no API key configured to prove graceful degradation.
 
 ---
 
@@ -140,6 +159,8 @@ All LLM calls live in the isolated `aiservice` app (see Section 6 for prompts). 
 |---|---|---|---|
 | `/accounts/register/` | GET/POST | Public | Patient self-registration |
 | `/accounts/login/` , `/accounts/logout/` | GET/POST | Public | Auth |
+| `/accounts/password-reset/` | GET/POST | Public | Request password-reset email |
+| `/accounts/password-reset/<uidb64>/<token>/` | GET/POST | Public | Choose a new password |
 | `/` | GET | Logged in | Doctor search/directory |
 | `/appointments/doctor/<id>/` | GET | Logged in | Slot picker for one doctor |
 | `/appointments/doctor/<id>/hold/` | POST (AJAX) | Patient | Place a slot hold, returns JSON |
@@ -232,9 +253,9 @@ Given the time budget, these were deliberately left out in favor of depth on the
 
 1. Push this repo to GitHub.
 2. In Render, choose **New → Blueprint**, select this repository, and apply `render.yaml`. This creates the web service.
-3. Set the secret environment variables in the Render dashboard: `SECRET_KEY`, `EMAIL_HOST_PASSWORD`, `ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`. Set `ALLOWED_HOSTS` to include the generated `*.onrender.com` hostname.
+3. Set the secret environment variables in the Render dashboard: `SECRET_KEY`, `EMAIL_HOST_PASSWORD`, `ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`. Set `ALLOWED_HOSTS` to include the generated `*.onrender.com` hostname. Also set `DEFAULT_FROM_EMAIL` to a SendGrid-verified address and update `HOSPITAL_NAME` / `EMAIL_FROM_NAME` with the name patients should see.
 4. Confirm the generated service URL opens the login page. The Render free tier may suspend an idle service; the first request after suspension can take a little longer.
 5. For Railway, create a Django service, set build command `pip install -r requirements.txt && python manage.py migrate`, start command `gunicorn core.wsgi`, attach PostgreSQL, and copy the variables from `.env.example`.
 6. Configure the commands in Section 8 as optional scheduled jobs if your hosting plan supports cron jobs.
 
-The application has no hosting URL until a hosting account provisions the service. Do not place credentials in this repository or commit `notifications/google_token.json`.
+Do not place credentials in this repository or commit `notifications/google_token.json`.

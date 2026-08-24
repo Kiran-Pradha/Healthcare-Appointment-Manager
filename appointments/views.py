@@ -130,7 +130,7 @@ def symptom_form(request, hold_id):
         # --- Email confirmations, logged either way ---
         notify_booking_confirmed(appointment)
 
-        messages.success(request, "Appointment booked! A confirmation has been sent to your email.")
+        messages.success(request, "Appointment booked! A confirmation has been sent to your email. Please check your spam folder.")
         return redirect('patient_dashboard')
 
     return render(request, 'appointments/symptom_form.html', {'hold': hold})

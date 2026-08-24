@@ -21,13 +21,16 @@ class CustomLoginForm(AuthenticationForm):
         self.fields['username'].widget.attrs.update({
             'placeholder': 'Username',
             'class': 'form-control form-control-lg',
+            'required': True,
         })
         self.fields['password'].widget.attrs.update({
             'placeholder': 'Password',
             'class': 'form-control form-control-lg',
+            'required': True,
         })
         self.fields['role'].widget.attrs.update({
             'class': 'form-select d-none',
+            'required': True,
         })
 
     def clean(self):

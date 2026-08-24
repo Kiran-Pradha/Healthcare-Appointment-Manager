@@ -9,7 +9,7 @@
       <p class="login-subtitle">Select the portal that matches your access level and continue securely.</p>
     </div>
 
-    <form method="post" class="login-form" novalidate>
+    <form method="post" class="login-form">
       {% csrf_token %}
 
       <div class="role-grid" aria-label="Select role">
@@ -57,6 +57,10 @@
 
       <button type="submit" class="btn btn-primary login-submit mt-4">Login to portal</button>
     </form>
+
+    <div class="text-center mt-3">
+      <a href="{% url 'password_reset' %}">Forgot your password?</a>
+    </div>
 
     <div class="login-footer text-center mt-4">
       <span>Need an account?</span>

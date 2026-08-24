@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: healthcare-appointment-manager
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn core.wsgi:application
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.sendgrid.net
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        value: apikey
+      - key: EMAIL_TIMEOUT
+        value: "10"
+      - key: DEFAULT_FROM_EMAIL
+        value: clinic@example.com
+      - key: SLOT_HOLD_MINUTES
+        value: "5"

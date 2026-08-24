@@ -2,6 +2,8 @@
 
 A clinic appointment platform with separate patient, doctor, and admin experiences: patients search doctors and book slots, submit symptoms and get an AI-generated pre-visit summary for the doctor, doctors submit post-visit notes that become a patient-friendly AI summary, and both sides stay informed via email and Google Calendar.
 
+**Hosted application URL:** Not yet provisioned. The repository includes a Render deployment manifest (`render.yaml`); after creating the Render service and setting its secrets, use the service URL shown by Render.
+
 Built with **Django + PostgreSQL** (SQLite for zero-setup local dev), server-rendered templates (no separate frontend build), and the **Anthropic API** for LLM summaries.
 
 ---
@@ -229,9 +231,10 @@ Given the time budget, these were deliberately left out in favor of depth on the
 ## 10. Deployment (Render / Railway, free tier)
 
 1. Push this repo to GitHub.
-2. Create a new Web Service, connect the repo.
-3. Build command: `pip install -r requirements.txt && python manage.py migrate && python manage.py seed_demo_data`
-4. Start command: `gunicorn core.wsgi`
-5. Add a Postgres addon — `DATABASE_URL` is usually injected automatically.
-6. Set the remaining env vars from `.env.example` in the dashboard (`SECRET_KEY`, `ALLOWED_HOSTS` including your `*.onrender.com` domain, email/LLM/calendar keys as available).
-7. Add two Cron Jobs for the commands in Section 8, if the platform supports them (Render Cron Jobs / Railway Cron).
+2. In Render, choose **New → Blueprint**, select this repository, and apply `render.yaml`. This creates the web service.
+3. Set the secret environment variables in the Render dashboard: `SECRET_KEY`, `EMAIL_HOST_PASSWORD`, `ANTHROPIC_API_KEY`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET`. Set `ALLOWED_HOSTS` to include the generated `*.onrender.com` hostname.
+4. Confirm the generated service URL opens the login page. The Render free tier may suspend an idle service; the first request after suspension can take a little longer.
+5. For Railway, create a Django service, set build command `pip install -r requirements.txt && python manage.py migrate`, start command `gunicorn core.wsgi`, attach PostgreSQL, and copy the variables from `.env.example`.
+6. Configure the commands in Section 8 as optional scheduled jobs if your hosting plan supports cron jobs.
+
+The application has no hosting URL until a hosting account provisions the service. Do not place credentials in this repository or commit `notifications/google_token.json`.

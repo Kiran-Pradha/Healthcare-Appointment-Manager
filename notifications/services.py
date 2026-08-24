@@ -8,6 +8,7 @@ picks up FAILED rows and retries them, which is the "background job for
 """
 
 import logging
+from email.utils import formataddr
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import NotificationLog
@@ -15,6 +16,10 @@ from .models import NotificationLog
 logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
+
+
+def _from_email():
+    return formataddr((settings.EMAIL_FROM_NAME, settings.DEFAULT_FROM_EMAIL))
 
 
 def _send_and_log(*, appointment, recipient, subject, message, notif_type):
@@ -27,7 +32,7 @@ def _send_and_log(*, appointment, recipient, subject, message, notif_type):
         send_mail(
             subject=subject,
             message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=_from_email(),
             recipient_list=[recipient.email] if recipient.email else [],
             fail_silently=False,
         )
@@ -54,7 +59,7 @@ def retry_failed(log_entry: NotificationLog) -> bool:
     subject, message = _render(log_entry.notif_type, appt)
     try:
         send_mail(
-            subject=subject, message=message, from_email=settings.DEFAULT_FROM_EMAIL,
+            subject=subject, message=message, from_email=_from_email(),
             recipient_list=[log_entry.recipient.email] if log_entry.recipient.email else [],
             fail_silently=False,
         )
@@ -94,7 +99,7 @@ def _render(notif_type, appointment):
         subject = "Clinic Notification"
         message = f"Update regarding your appointment with {doctor_name} on {when}."
 
-    return subject, message
+    return subject, f"Hello {patient_name},\n\n{message}\n\nThank you,\n{settings.HOSPITAL_NAME}"
 
 
 def notify_booking_confirmed(appointment):
@@ -104,9 +109,11 @@ def notify_booking_confirmed(appointment):
                   message=message, notif_type=NotificationLog.NotifType.BOOKING_CONFIRMATION)
 
     doctor_message = (
-        f"New appointment booked: {appointment.patient.get_full_name() or appointment.patient.username} "
+        f"Hello,\n\nNew appointment booked: "
+        f"{appointment.patient.get_full_name() or appointment.patient.username} "
         f"on {appointment.date} at {appointment.start_time.strftime('%I:%M %p')}. "
-        f"Urgency: {appointment.ai_urgency_level or 'pending'}."
+        f"Urgency: {appointment.ai_urgency_level or 'pending'}.\n\n"
+        f"Thank you,\n{settings.HOSPITAL_NAME}"
     )
     _send_and_log(appointment=appointment, recipient=appointment.doctor.user, subject="New Appointment Booked",
                   message=doctor_message, notif_type=NotificationLog.NotifType.BOOKING_CONFIRMATION)
@@ -128,6 +135,7 @@ def notify_leave_conflict(appointment, alternatives=None):
     doctor_name = f"Dr. {appointment.doctor.user.get_full_name()}"
     subject = "Your appointment needs to be rescheduled"
     message = (
+        f"Hello {appointment.patient.get_full_name() or appointment.patient.username},\n\n"
         f"{doctor_name} is unavailable on {appointment.date} and your appointment "
         f"at {appointment.start_time.strftime('%I:%M %p')} has been cancelled.\n\n"
     )
@@ -138,6 +146,8 @@ def notify_leave_conflict(appointment, alternatives=None):
         message += "\nPlease visit the clinic portal to rebook one of these, or any other time that suits you."
     else:
         message += "Please visit the clinic portal to rebook at your earliest convenience."
+
+    message += f"\n\nThank you,\n{settings.HOSPITAL_NAME}"
 
     _send_and_log(appointment=appointment, recipient=appointment.patient, subject=subject,
                   message=message, notif_type=NotificationLog.NotifType.LEAVE_CONFLICT)

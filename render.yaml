@@ -26,5 +26,9 @@ services:
         value: "10"
       - key: DEFAULT_FROM_EMAIL
         value: clinic@example.com
+      - key: HOSPITAL_NAME
+        value: PulseCare Hospital
+      - key: EMAIL_FROM_NAME
+        value: PulseCare Hospital
       - key: SLOT_HOLD_MINUTES
         value: "5"
